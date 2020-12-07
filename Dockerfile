@@ -5,5 +5,4 @@ FROM scratch
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 COPY ./datadog-apm ./datadog-apm
-LABEL Name=oem-audi Version=$version
 CMD [ "./datadog-apm" ]
