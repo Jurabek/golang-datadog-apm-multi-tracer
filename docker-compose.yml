@@ -2,23 +2,45 @@ version: "3.7"
 
 services:
     sample-app:
-      build: sample-app
-
+      image: sampleapp
+      build: 
+        context: .
+        dockerfile: Dockerfile
+      depends_on:
+      - "dynamodb-local"
+      environment:
+        AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
+        AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
+        AWS_REGION: 'eu-west-1'
+        DD_AGENT_HOST: datadog-agent
+      ports:
+        - "3000:3000"
+      links:
+        - datadog-agent
+        - dynamodb-local
+      
     dynamodb-local:
+      command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
       image: amazon/dynamodb-local:latest
       container_name: dynamodb-local
       ports:
         - "8000:8000"
+      volumes:
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+      working_dir: /home/dynamodblocal
 
     # agent section
-    datadog:
-      image: datadog
-      links:
-      - redis # ensures that redis is a host that the container can find
-      - sample-app # ensures that the web app can send metrics
+    datadog-agent:
+      image: gcr.io/datadoghq/agent:latest
+      container_name: datadog-agent
       environment:
-      - DD_API_KEY=__your_datadog_api_key_here__
+      - DD_API_KEY=REPLACE
+      - DD_SITE=datadoghq.eu
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_APM_ENABLED=true
       volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc/:/host/proc/:ro
       - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+      ports:
+        - 8126:8126

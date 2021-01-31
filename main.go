@@ -16,7 +16,7 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
-const tableName = "ItemsTable"
+const tableName = "Items"
 
 func main() {
 	tracer.Start()
@@ -27,6 +27,7 @@ func main() {
 		Config: aws.Config{
 			Credentials: credentials.NewEnvCredentials(),
 			Region:      aws.String(awsRegion),
+			Endpoint:    aws.String("http://dynamodb-local:8000"),
 		},
 		SharedConfigState: session.SharedConfigEnable,
 	}))
@@ -37,6 +38,8 @@ func main() {
 		result, err := dynamodbSvs.Scan(&dynamodb.ScanInput{TableName: aws.String(tableName)})
 		if err != nil {
 			log.Fatalf("DynamoDb GetItem failed: %v", err.Error())
+			http.Error(w, "Not found", 404)
+			return
 		}
 
 		if result.Items == nil {
@@ -57,6 +60,10 @@ func main() {
 		_, _ = w.Write(body)
 
 	}).Methods("GET")
+
+	r.HandleFunc("/saveItem", func(w http.ResponseWriter, r *http.Request) {
+
+	}).Methods("POST")
 
 	err := http.ListenAndServe(":3000", r)
 	log.Fatal(err)
